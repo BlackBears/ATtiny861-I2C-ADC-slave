@@ -63,7 +63,7 @@ int main(void)
 			temp = usiTwiReceiveByte();
 			uint16_t v = read_adc(temp);
 			usiTwiTransmitByte((uint8_t)v);
-			//usiTwiTransmitByte((uint8_t)(v >> 8));
+			usiTwiTransmitByte((uint8_t)(v >> 8));
 		}
 	asm volatile ("NOP" ::);
 	}
@@ -73,14 +73,15 @@ int main(void)
 uint16_t read_adc(uint8_t chan) {
 	//	if 8-bit precision only is required, then set the ADLAR bit and just read ADCH
 	//ADMUX = (chan & ~0b00001111) | (1<<REFS0);
-	ADMUX = (1<<ADLAR) | chan;
+	//ADMUX = (1<<ADLAR) | chan;
 	//ADMUX = (1<<ADLAR) | (1<<MUX1);
+	ADMUX = chan;
 	ADCSRA = (1<<ADEN) | (1<<ADSC);
 	asm volatile ("NOP" ::);
     asm volatile ("NOP" ::);
 	while ( ADCSRA & ( 1 << ADSC ) );
-	return ADCH;
-	//uint8_t result_l = ADCL;
-	//uint8_t result_h = ADCH;
-	//return (result_h << 8) | result_l;
+	//return ADCH;
+	uint8_t result_l = ADCL;
+	uint8_t result_h = ADCH;
+	return (result_h << 8) | result_l;
 }
