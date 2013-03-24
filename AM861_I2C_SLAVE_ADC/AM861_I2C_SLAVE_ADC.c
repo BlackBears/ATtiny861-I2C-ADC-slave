@@ -33,11 +33,6 @@
 #endif
 
 //	OPERATIONAL CODES
-static const uint8_t RADC0 = 0x00;
-static const uint8_t RADC1 = 0x01;
-static const uint8_t RADC2 = 0x02;
-static const uint8_t RADC3 = 0x03;
-static const uint8_t RADC4 = 0x04;
 
 enum { RADC0 = 0, RADC1, RADC2, RADC3, RADC4, RADC5, RADC6, RADC7, RADC8, RADC9, RADCT = 0x3F };
 typedef uint8_t adc_code_t;
@@ -48,6 +43,9 @@ uint16_t read_temp(void);
 
 int main(void)
 {
+	DDRB |= (1<<PB6);
+	
+	PORTB |= (1<<PB6);
 	unsigned char slaveAddress, temp;
 
 	sei();
@@ -63,13 +61,13 @@ int main(void)
 	for(;;) {
 		if(usiTwiDataInReceiveBuffer()) {
 			uint16_t v;
-			temp = usiTwiReceiveByte();
 			adc_code_t code = (adc_code_t)usiTwiReceiveByte();
 			if( code == RADCT ) {
+				PORTB &= ~(1<<PB6);
 				v = read_temp();
 			}
 			else {
-				v = read_temp((uint8_t)code);
+				v = read_adc((uint8_t)code);
 			}
 			usiTwiTransmitByte((uint8_t)v);
 			usiTwiTransmitByte((uint8_t)(v >> 8));
