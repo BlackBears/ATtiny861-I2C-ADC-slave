@@ -32,7 +32,19 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
 
+//	OPERATIONAL CODES
+static const uint8_t RADC0 = 0x00;
+static const uint8_t RADC1 = 0x01;
+static const uint8_t RADC2 = 0x02;
+static const uint8_t RADC3 = 0x03;
+static const uint8_t RADC4 = 0x04;
+
+enum { RADC0 = 0, RADC1, RADC2, RADC3, RADC4, RADC5, RADC6, RADC7, RADC8, RADC9, RADCT = 0x3F };
+typedef uint8_t adc_code_t;
+
+
 uint16_t read_adc(uint8_t chan);
+uint16_t read_temp(void);
 
 int main(void)
 {
@@ -50,8 +62,15 @@ int main(void)
 	usiTwiSlaveInit(slaveAddress);
 	for(;;) {
 		if(usiTwiDataInReceiveBuffer()) {
+			uint16_t v;
 			temp = usiTwiReceiveByte();
-			uint16_t v = read_adc(temp);
+			adc_code_t code = (adc_code_t)usiTwiReceiveByte();
+			if( code == RADCT ) {
+				v = read_temp();
+			}
+			else {
+				v = read_temp((uint8_t)code);
+			}
 			usiTwiTransmitByte((uint8_t)v);
 			usiTwiTransmitByte((uint8_t)(v >> 8));
 		}
@@ -69,5 +88,19 @@ uint16_t read_adc(uint8_t chan) {
 	while ( ADCSRA & ( 1 << ADSC ) );
 	uint8_t result_l = ADCL;
 	uint8_t result_h = ADCH;
+	return (result_h << 8) | result_l;
+}
+
+uint16_t read_temp(void) {
+	//	MUX5..0 set to 0b111111 to enable special ADC11 channel
+	//	set 1.1V internal reference
+	ADMUX = (1<<REFS1) | (1<<MUX4) | (1<<MUX3) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0) ;
+	ADCSRB |= (1<<MUX5);
+	asm volatile ("NOP" ::);
+    asm volatile ("NOP" ::);
+	while ( ADCSRA & ( 1 << ADSC ) );
+	uint8_t result_l = ADCL;
+	uint8_t result_h = ADCH;
+	ADCSRB &= ~(1<<MUX5);
 	return (result_h << 8) | result_l;
 }
