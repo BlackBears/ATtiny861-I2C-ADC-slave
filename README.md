@@ -64,8 +64,23 @@ This will print a grid to the console; and you should see device `26` in the gri
 
 Now, you can read a value from an ADC:
 
-    sudo i2cget -y 1 0x26 0x00 b
+    sudo i2cget -y 1 0x26 0x00 w
 
  ![i2cget results](http://i.imgur.com/YSV9331.png)
+
+ #### Reading the on-chip temperature ####
+
+ The ATtinyx61 series permits reading the on-chip temperature by accessing a special internal ADC channel.
+
+ You can also read the on-chip temperature by reading from register `0x3F`:
+
+ 	sudo i2cget -y 1 0x26 0x3F w
+
+You will need to convert the returned ADC value to degrees C via a linear formula based on calibration.  According to the datasheet:
+
+> The measured voltage has a linear relationship to the temperature as described in Table 15-2.  The sensitivity is approximately 1 LSB/°C and the accuracy depends on the method of user calibration.  Typically, the measurement accuracy after a single temperature calibration is ±10°C, assuming calibration at room temperature.  Better accuracies are achieved by using two temperature points for calibration. 
+
+I recommend using two different temperatures and just use linear data modeling _(e.g. `y = mx+b`)_ to calibrate the following equation `T (°C) = k * [ (ADCH << 8) | ADCL ] + Tos`.  Where `k` is the fixed slope coefficient and `Tos` is the temperature sensor offset.  The datasheet says it is close to 1.0 typically.
+
 
  
