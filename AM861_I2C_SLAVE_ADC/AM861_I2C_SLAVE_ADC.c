@@ -50,7 +50,7 @@ int main(void)
 
 	sei();
   
-	// enable the ADC circuitry, free-running mode, interrupt with /2 prescaler
+	// enable the ADC circuitry, free-running mode, interrupt with /64 prescaler
 	ADCSRA = (1<<ADEN) | (1<<ADSC) | (1<<ADPS2) | (1<<ADPS1);
 	// wait for complete conversion
 	while ( ADCSRA & ( 1 << ADSC ) );    
